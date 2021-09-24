@@ -1,56 +1,98 @@
-class myLocalStorage{
-    static myStorage = window.localStorage;
 
-    static add(key, val){
-        let localStorageValue = this.myStorage.getItem(key);
-        if(!localStorageValue){
-            this.myStorage.setItem(key, val)
+class myLocalStorage{
+    tasks;
+    myStorage;
+
+    constructor(){
+        this.tasks = {
+            "todo": [],
+            "in-progress": [],
+            "done": []
+        };
+        this.myStorage = window.localStorage;
+        // this.myStorage.clear();
+        if(this.myStorage.getItem('tasks')){//if there was local storage earlier
+            this.tasks = JSON.parse(this.myStorage.getItem('tasks'));
+            this.DOMSync();
         }
         else{
-            this.myStorage.setItem(key, localStorageValue + "," + val);
+            this.myStorage.setItem('tasks',JSON.stringify(this.tasks));
         }
     }
+
+    DOMSync(){
+        let elToAppend;
+
+        for(const key in this.tasks){
+            let elId = key;
+            if(elId === "todo") elId = "to-do"
+            elId = "section-"+elId;
+            elToAppend = document.getElementById(elId).children[1]
+            for(let child of elToAppend.children){
+                elToAppend.removeChild(child)
+            }
+            for(const value of this.tasks[key]){
+                let textEl = document.createElement("p");
+                textEl.textContent = value;
+                let li = document.createElement("li");
+                li.appendChild(textEl);
+                li.addEventListener("dblclick",() => dblClickHandler(li));
     
-    static getVals(key){
-        if(this.myStorage.getItem(key))
-            return this.myStorage.getItem(key).split(',');
-        return;
+                li.addEventListener("mouseover", () =>document.onkeydown = pressOnHoverHandler)
+                li.addEventListener("mouseout", () => document.onkeydown = null)
+    
+                elToAppend.appendChild(li)
+            }
+        }
     }
 
-    static setVal(key,oldVal,newVal){
+    add(key, val){
+        this.tasks[key].push(val);
+        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
+    }
+
+    print(){
+        console.log(this.tasks);
+        console.log(this.myStorage);
+    }
+
+    getVals(key){
+        return this.tasks[key];
+    }
+
+    setVal(key,oldVal,newVal){
         let vals = this.getVals(key);
         let index = vals.indexOf(oldVal);
-        if(index <= -1){
-            return;
-        }
+        if(index <= -1) return;
         vals[index] = newVal;
-        this.myStorage.setItem(key, vals.join(','))
+        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
     }
 
-    static removeVal(key, value){
+    removeVal(key,value){
         let vals = this.getVals(key);
         let index = vals.indexOf(value);
-        console.log(index)
-        if(index < 0){
-            return;
-        }
+        // console.log(index)
+        if(index < 0) return;
         vals.splice(index,1);
-        this.myStorage.setItem(key, vals.join(','))
-        return(value);
+        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
     }
 }
+
+let localStorage = new myLocalStorage();
+localStorage.removeVal('todo', 'a');
+localStorage.print();
+
 
 function moveElement(elToMove, to){
     let father = elToMove.parentElement;
     father.removeChild(elToMove);
     to.appendChild(elToMove);
-    console.log(myLocalStorage.myStorage)
 
     const localStorageKeyFrom = father.parentElement.dataset.name;
     const localStorageKeyTo = to.parentElement.dataset.name;
     const localStorageValue = elToMove.firstChild.textContent
-    myLocalStorage.removeVal(localStorageKeyFrom, localStorageValue);
-    myLocalStorage.add(localStorageKeyTo, localStorageValue);
+    localStorage.removeVal(localStorageKeyFrom, localStorageValue);
+    localStorage.add(localStorageKeyTo, localStorageValue);
 }
 
 function pressOnHoverHandler(evt){
@@ -59,7 +101,6 @@ function pressOnHoverHandler(evt){
         let elementToMove = document.querySelectorAll(":hover")[5];
         const key = evt.key;
         const localStorageKey = document.querySelectorAll(":hover")[3].dataset.name
-        //console.log(localStorageKey)
         if(key === TODO && localStorageKey != "to-do"){
             moveElement(elementToMove, document.getElementById("section-to-do").children[1])
         }
@@ -75,30 +116,18 @@ function pressOnHoverHandler(evt){
 
 function onClickHandler(caller){
     const father = caller.parentElement;
-    let elToAppend = father.children[1];
     let value = father.children[2].value;
     
-
     if(!value){
         alert("Can't add empty text")
         return;
     }
 
     const localStorageKey = father.dataset.name;
-    myLocalStorage.add(localStorageKey, value);
+    localStorage.add(localStorageKey, value);
 
-    var textEl;
-    textEl = document.createElement("p");
-    textEl.textContent = value;
-    let li = document.createElement("li");
-    li.appendChild(textEl);
-    
-    li.addEventListener("dblclick",() => dblClickHandler(li));
+    localStorage.DOMSync();
 
-    li.addEventListener("mouseover", () =>document.onkeydown = pressOnHoverHandler)
-    li.addEventListener("mouseout", () => document.onkeydown = null)
-
-    elToAppend.appendChild(li)
     father.children[2].value = "";
 }
 
@@ -112,9 +141,7 @@ function dblClickHandler(liEl){
 
     textEl.addEventListener("blur",() => {
         textEl.contentEditable = "false"
-        myLocalStorage.setVal(localStorageKey,oldVal,textEl.textContent)
-        console.log(myLocalStorage.myStorage)
+        localStorage.setVal(localStorageKey,oldVal,textEl.textContent)
     })
 }
 
-myLocalStorage.myStorage.clear();
