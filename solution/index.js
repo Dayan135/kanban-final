@@ -20,7 +20,7 @@ class myLocalStorage{
     static setVal(key,oldVal,newVal){
         let vals = this.getVals(key);
         let index = vals.indexOf(oldVal);
-        if(!index){
+        if(index <= -1){
             return;
         }
         vals[index] = newVal;
@@ -29,56 +29,92 @@ class myLocalStorage{
 
     static removeVal(key, value){
         let vals = this.getVals(key);
-        let index = vals.indexOf(oldVal);
-        if(!index){
+        let index = vals.indexOf(value);
+        console.log(index)
+        if(index < 0){
             return;
         }
         vals.splice(index,1);
+        this.myStorage.setItem(key, vals.join(','))
+        return(value);
     }
 }
 
-myLocalStorage.myStorage.clear();
-myLocalStorage.add('hi','hello')
-myLocalStorage.add('hi','hello2')
-myLocalStorage.add('hi','hello1')
-//console.log(getLocalStorageValues('hi'))
-// console.log(myLocalStorage.getVals('hi'))
-myLocalStorage.setVal('hi','hello2', 'hellllllllll')
-console.log(myLocalStorage.myStorage);
-myLocalStorage.removeVal('hi',"hellllllllll");
+function moveElement(elToMove, to){
+    let father = elToMove.parentElement;
+    father.removeChild(elToMove);
+    to.appendChild(elToMove);
+    console.log(myLocalStorage.myStorage)
+
+    const localStorageKeyFrom = father.parentElement.dataset.name;
+    const localStorageKeyTo = to.parentElement.dataset.name;
+    const localStorageValue = elToMove.firstChild.textContent
+    myLocalStorage.removeVal(localStorageKeyFrom, localStorageValue);
+    myLocalStorage.add(localStorageKeyTo, localStorageValue);
+}
+
+function pressOnHoverHandler(evt){
+    const TODO = '1', IN_PROGRESS = '2', DONE = '3'
+    if(evt.altKey) {
+        let elementToMove = document.querySelectorAll(":hover")[5];
+        const key = evt.key;
+        const localStorageKey = document.querySelectorAll(":hover")[3].dataset.name
+        //console.log(localStorageKey)
+        if(key === TODO && localStorageKey != "to-do"){
+            moveElement(elementToMove, document.getElementById("section-to-do").children[1])
+        }
+        else if(key === IN_PROGRESS && localStorageKey != "in-progress"){
+            moveElement(elementToMove, document.getElementById("section-in-progress").children[1])
+        }
+        else if(key === DONE && localStorageKey != "done"){
+            moveElement(elementToMove, document.getElementById("section-done").children[1])
+        }
+    }
+}
 
 
 function onClickHandler(caller){
     const father = caller.parentElement;
     let elToAppend = father.children[1];
-    let input = father.children[2];
+    let value = father.children[2].value;
+    
 
-    if(!input.value){
+    if(!value){
         alert("Can't add empty text")
         return;
     }
 
     const localStorageKey = father.dataset.name;
-    
+    myLocalStorage.add(localStorageKey, value);
 
     var textEl;
     textEl = document.createElement("p");
-    textEl.textContent = input.value;
+    textEl.textContent = value;
     let li = document.createElement("li");
     li.appendChild(textEl);
+    
     li.addEventListener("dblclick",() => dblClickHandler(li));
 
+    li.addEventListener("mouseover", () =>document.onkeydown = pressOnHoverHandler)
+    li.addEventListener("mouseout", () => document.onkeydown = null)
+
     elToAppend.appendChild(li)
-    input.value = "";
+    father.children[2].value = "";
 }
 
 function dblClickHandler(liEl){
     let textEl = liEl.firstChild
+    const oldVal = textEl.textContent
+    const localStorageKey = textEl.parentElement.parentElement.parentElement.dataset.name
+    //the data of the section element 
     textEl.contentEditable = "true"
     textEl.focus();
 
-    textEl.addEventListener("blur",() => textEl.contentEditable = "false")
+    textEl.addEventListener("blur",() => {
+        textEl.contentEditable = "false"
+        myLocalStorage.setVal(localStorageKey,oldVal,textEl.textContent)
+        console.log(myLocalStorage.myStorage)
+    })
 }
 
-let myStorage = window.localStorage;
-myStorage.clear();
+myLocalStorage.myStorage.clear();
