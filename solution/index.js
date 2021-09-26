@@ -337,10 +337,7 @@ function dblClickHandler(liEl){
     textEl.contentEditable = "true"
 
     const blurFunc = () => {
-        console.log(this.localStorage)
         localStorage.setVal(localStorageKey,oldVal,textEl.textContent)
-        console.log(this.localStorage )
-        console.log("old - " + oldVal + "new" + textEl.textContent)
         textEl.contentEditable = "false"
         textEl.removeEventListener("blur",blurFunc)
     }
