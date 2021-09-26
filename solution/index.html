@@ -8,6 +8,51 @@
     <link rel="stylesheet" href="./styles.css" />
     <title>Tasks manager</title>
 </head>
-<body>
+<body id = "body">
+    <div>
+        <h1 id = "page-title">Task Manager</h1>
+        <input id = "search" placeholder="Search">
+    </div>
+    <div>
+        <table>
+            <tr>
+                <td>
+                    <section data-name = "todo" id = "section-to-do">
+                        <h2>to do</h2>
+                        <ul class = "to-do-tasks"></ul>
+                        <input id = "add-to-do-task" placeholder="Add to do">
+                        <button id = "submit-add-to-do" onclick=onClickHandler(this)>Add</button>
+                    </section>
+                </td>
+                <td>
+                    <section data-name = "in-progress" id = "section-in-progress">
+                        <h2>in progress</h2>
+                        <ul class = "in-progress-tasks"></ul>
+                        <input id = "add-in-progress-task" placeholder="Add in progress">
+                        <button id = "submit-add-in-progress" onclick =onClickHandler(this)>Add</button>
+                    </section>
+                </td>
+                <td>
+                    <section data-name = "done" id = "section-done">
+                        <h2>done</h2>
+                        <ul class = "done-tasks"></ul>
+                        <input id = "add-done-task" placeholder="Add done">
+                        <button id = "submit-add-done" onclick =onClickHandler(this)>Add</button>
+                    </section>
+                </td>
+            </tr>
+                <td>
+                    <button id = "save-btn" onclick=onSaveClick()>save</button>
+                    <button id = "load-btn" onclick=onLoadClick()>load</button>
+                </td>
+        </table>
+    </div>
+    
+    <!-- <div id = "loader">
+        <p>Loading...</p>
+        <div class="loader"></div>
+    </div> -->
+
+    </div>
 </body>
 </html>

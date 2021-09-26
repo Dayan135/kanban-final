@@ -113,7 +113,7 @@ let wasInPut = false
 
 describe(projectName, () => {
   beforeAll(async () => {
-    browser = await puppeteer.launch({ headless: true }) //change to false if you want to view the page
+    browser = await puppeteer.launch({ headless: false }) //change to false if you want to view the page
     page = await browser.newPage()
     page.setRequestInterception(true)
     page.on('request', async (req) => {
@@ -246,7 +246,7 @@ describe(projectName, () => {
     await page.$eval(searchInput, (e) => e.blur())
   })
 
-  test.skip('User should be able to save and load their tasks from the api and save it to the local storage', async () => {
+  test('User should be able to save and load their tasks from the api and save it to the local storage', async () => {
     const initialTasksCount = await countTasks()
     expect(initialTasksCount).toBe(3)
     await page.click(loadTasksFromApiBtn)
@@ -261,7 +261,7 @@ describe(projectName, () => {
     expect(tasksCountAfterRefresh).toBe(0)
   })
 
-  test.skip('User should be save tasks from the api', async () => {
+  test('User should be save tasks from the api', async () => {
     await addTasksAndTest()
     const initialTasksCount = await countTasks()
     expect(initialTasksCount).toBe(3)
