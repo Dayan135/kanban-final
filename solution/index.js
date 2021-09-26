@@ -21,7 +21,7 @@
  * 
  */
 class myLocalStorage{
-    tasks;
+    #tasks;
     myStorage;
 
     /**
@@ -32,17 +32,19 @@ class myLocalStorage{
      */
     constructor(bool){
         this.myStorage = window.localStorage;
-        this.tasks = {
+        this.#tasks = {
             "todo": [],
             "in-progress": [],
             "done": []
         };
-        if(bool){
-            this.saveToApi();
-            // this.myStorage.clear();
-            // this.myStorage.setItem('tasks', JSON.stringify(this.tasks));
+        if(!bool){//if there was local storage earlier
+            if(JSON.parse(this.myStorage.getItem('tasks')))
+                this.#tasks = JSON.parse(this.myStorage.getItem('tasks'));
+            this.syncDOM();
         }
-        this.syncDOM();
+        else{
+            this.myStorage.setItem('tasks',JSON.stringify(this.#tasks));
+        }
     }
 
     /**
@@ -50,17 +52,11 @@ class myLocalStorage{
      * if value has been given- represents filtered info by the value.
      * @param {string} value - optional. filters the elements to show by the value.
      */
-    async syncDOM(value){
+    syncDOM(value){
         let elToAppend;
-
-        await this.loadFromApi();
-        
         this.#newWindow()
-
-        console.log("syncDOM");
-        console.log(this.tasks)
         
-        for(const key in this.tasks){
+        for(const key in this.#tasks){
             let elId = key;
 
             //private situation of todo section
@@ -71,10 +67,10 @@ class myLocalStorage{
             for(let child of elToAppend.children){
                 elToAppend.removeChild(child)
             }
-            let values = this.tasks[key]
+            let values = this.#tasks[key]
             if(value != undefined){
                 values = [];
-                for(const val of this.tasks[key]){
+                for(const val of this.#tasks[key]){
                     if(val.toLowerCase().includes(value.toLowerCase())) {
                         values.push(val)
                     }
@@ -90,7 +86,7 @@ class myLocalStorage{
      */
     #newWindow(){
         let ulElement;
-        for(let key of Object.keys(this.tasks)){
+        for(let key of Object.keys(this.#tasks)){
             if(key ==="todo") key = "to-do"
             ulElement = document.getElementById("section-"+key).children[1]
             while(ulElement.firstChild) ulElement.removeChild(ulElement.firstChild)
@@ -124,14 +120,10 @@ class myLocalStorage{
      * @param {string} key - key to add to.
      * @param {string} val - the values to add.
      */
-    async add(key, val){
-        this.tasks[key].unshift(val);
-        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
-        let x;
-        do{
-            x = await this.saveToApi()
-        }
-        while(!x)
+    add(key, val){
+        this.#tasks[key].unshift(val);
+        this.myStorage.setItem('tasks',JSON.stringify(this.#tasks))
+        
         this.syncDOM();
     }
 
@@ -141,7 +133,7 @@ class myLocalStorage{
      * @returns {Array}    - array of the values
      */
     getVals(key){
-        return this.tasks[key];
+        return this.#tasks[key];
     }
 
     /**
@@ -151,12 +143,10 @@ class myLocalStorage{
      * @param {string} newVal - the new value.
      */
     setVal(key,oldVal,newVal){
-        let vals = this.getVals(key);
-        let index = vals.indexOf(oldVal);
+        let index = this.#tasks[key].indexOf(oldVal);
         if(index <= -1) return;
-        vals[index] = newVal;
-        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
-        this.saveToApi();
+        this.#tasks[key][index] = newVal;
+        this.myStorage.setItem('tasks',JSON.stringify(this.#tasks))
     }
 
     /**
@@ -165,14 +155,12 @@ class myLocalStorage{
      * @param {string} value - the value to remove
      * @returns 
      */
-    async removeVal(key,value){
+    removeVal(key,value){
         let vals = this.getVals(key);
         let index = vals.indexOf(value);
         if(index < 0) return;
         vals.splice(index,1);
-        this.myStorage.setItem('tasks',JSON.stringify(this.tasks))
-        await this.saveToApi();
-        this.syncDOM();
+        this.myStorage.setItem('tasks',JSON.stringify(this.#tasks))
     }
 
     /**
@@ -180,7 +168,7 @@ class myLocalStorage{
      * @returns 1 if successfully got answer
      *          null otherwise.
      */
-    async loadFromApi(){
+    async loadFromApi(){//
         this.#createLoader();
         const getProp = {
             method : "GET",
@@ -192,11 +180,13 @@ class myLocalStorage{
         const getAns = await fetch("https://json-bins.herokuapp.com/bin/614b9b97815b7dac76e143fa",getProp)
         if(getAns.ok){
             const newValues = await getAns.json();
-            this.tasks = newValues.tasks;
-            this.myStorage.setItem('tasks', JSON.stringify(this.tasks));
+            this.#tasks = newValues.tasks;
+            this.myStorage.setItem('tasks', JSON.stringify(this.#tasks));
+            this.syncDOM();
             this.#deleteLoader();
             return 1;
         }
+        this.syncDOM();
         this.#deleteLoader();
         return null;
     }
@@ -206,9 +196,9 @@ class myLocalStorage{
      * @returns 1 if successfully got answer
      *          null otherwise.
      */
-    async saveToApi(){
+    async saveToApi(){//
         this.#createLoader();
-        let tasks = this.tasks
+        let tasks = this.#tasks
         const putProp = {
             method : "PUT",
             mode :"cors",
@@ -255,6 +245,13 @@ class myLocalStorage{
 let localStorage = new myLocalStorage();
 document.getElementById("search").onkeyup = searchKeyDownHandler;
 
+function onSaveClick(){
+    localStorage.saveToApi();
+}
+
+function onLoadClick(){
+    localStorage.loadFromApi();
+}
 
 /**
  * listener of search input change.
@@ -270,18 +267,16 @@ function searchKeyDownHandler(){
  * @param {HTMLElement} elToMove - the element we want to move.
  * @param {HTMLElement} to       - new location of the element.
  */
-async function moveElement(elToMove, to){
-    console.log("moveElement")
-    console.log(elToMove)
-    console.log(to)
+function moveElement(elToMove, to){
     let father = elToMove.parentElement;
+    father.removeChild(elToMove);
+    to.appendChild(elToMove);
+
     const localStorageKeyFrom = father.parentElement.dataset.name;
     const localStorageKeyTo = to.parentElement.dataset.name;
-    const localStorageValue = elToMove.firstChild.textContent;
-
-    await localStorage.removeVal(localStorageKeyFrom, localStorageValue);
-    await localStorage.add(localStorageKeyTo, localStorageValue);
-
+    const localStorageValue = elToMove.firstChild.textContent
+    localStorage.removeVal(localStorageKeyFrom, localStorageValue);
+    localStorage.add(localStorageKeyTo, localStorageValue);
 }
 
 /**
@@ -340,10 +335,12 @@ function dblClickHandler(liEl){
     const oldVal = textEl.textContent
     const localStorageKey = textEl.parentElement.parentElement.parentElement.dataset.name //the data of the section element 
     textEl.contentEditable = "true"
-    textEl.focus();
 
     const blurFunc = () => {
+        console.log(this.localStorage)
         localStorage.setVal(localStorageKey,oldVal,textEl.textContent)
+        console.log(this.localStorage )
+        console.log("old - " + oldVal + "new" + textEl.textContent)
         textEl.contentEditable = "false"
         textEl.removeEventListener("blur",blurFunc)
     }

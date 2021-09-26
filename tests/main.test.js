@@ -164,7 +164,7 @@ describe(projectName, () => {
     expect(elements.length).toBe(0)
   })
 
-  test.skip('Can add todo task with text to every section and save the data to local storage', async () => {
+  test('Can add todo task with text to every section and save the data to local storage', async () => {
     await addTasksAndTest()
     const tasks = await page.$$('.task')
     expect(tasks.length).toBe(3)
@@ -246,7 +246,7 @@ describe(projectName, () => {
     await page.$eval(searchInput, (e) => e.blur())
   })
 
-  test.skip('User should be able to save and load their tasks from the api and save it to the local storage', async () => {
+  test('User should be able to save and load their tasks from the api and save it to the local storage', async () => {
     const initialTasksCount = await countTasks()
     expect(initialTasksCount).toBe(3)
     await page.click(loadTasksFromApiBtn)
@@ -261,7 +261,7 @@ describe(projectName, () => {
     expect(tasksCountAfterRefresh).toBe(0)
   })
 
-  test.skip('User should be save tasks from the api', async () => {
+  test('User should be save tasks from the api', async () => {
     await addTasksAndTest()
     const initialTasksCount = await countTasks()
     expect(initialTasksCount).toBe(3)
